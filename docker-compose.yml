@@ -1,0 +1,48 @@
+services:
+  db:
+    image: "postgres:16.2-alpine"
+    container_name: maas-db
+    restart: unless-stopped
+    volumes:
+      - maas-data:/var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
+    networks:
+      - backend      
+    env_file:
+      - .env
+  backend:
+    container_name: maas-backend
+    build:
+      context: ./backend
+      dockerfile: dev.Dockerfile
+    volumes:
+      - .:/rails
+    networks:
+      - backend      
+    ports:
+      - ${BACKEND_PORT:-3000}:3000
+    env_file:
+      - .env
+    depends_on:
+      - db
+  frontend:
+    container_name: maas-frontend
+    build:
+      context: ./frontend
+      target: development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - ${WEB_PORT:-4000}:5173
+    env_file:
+      - .env
+
+volumes:
+  maas-data:
+    driver: local
+
+networks:
+  backend:
+     driver: bridge
